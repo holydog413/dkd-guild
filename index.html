@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dark Knight Disciples (DKD) · SWG Uprising Guild</title>
+<meta name="description" content="Dark Knight Disciples (DKD), a Star Wars Galaxies guild on the SWG Uprising server. Join us on Discord.">
+<meta name="theme-color" content="#0a0708">
+<meta property="og:title" content="Dark Knight Disciples (DKD)">
+<meta property="og:description" content="A Star Wars Galaxies guild on SWG Uprising. Join us on Discord.">
+<meta property="og:image" content="assets/hero.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="assets/hero.webp" imagesrcset="assets/hero-768.webp 768w, assets/hero.webp 1344w" imagesizes="100vw">
+<style>
+  :root{
+    --bg:#0a0708; --bg2:#120c0d; --panel:#171112; --line:#2a1a1c;
+    --text:#e8dcd9; --muted:#a8958f; --red:#c0262d; --red-hi:#e0373e; --red-deep:#7a1116;
+    --serif:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --display:"Cinzel", "Trajan Pro", Georgia, serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--serif);font-size:1.2rem;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:var(--red-hi)}
+  a:hover{color:#ff6a6f}
+  img{display:block;max-width:100%}
+
+  /* ---------- Nav ---------- */
+  .nav{position:absolute;top:0;right:0;z-index:5;display:flex;gap:1.6rem;padding:1.1rem 1.6rem;font-family:var(--display);font-size:.78rem;letter-spacing:.18em;text-transform:uppercase}
+  .nav a{color:var(--text);text-decoration:none;opacity:.8;text-shadow:0 1px 6px #000}
+  .nav a:hover{opacity:1;color:var(--red-hi)}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;background:#000;overflow:hidden}
+  .hero picture, .hero img{width:100%}
+  .hero img{aspect-ratio:1344/768;height:auto;max-height:100vh;object-fit:cover;object-position:center top}
+  .hero::after{ /* fade image into page + darken lower-left for legibility */
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 55% 60% at 0% 100%, rgba(0,0,0,.75), transparent 70%),
+      linear-gradient(to bottom, transparent 70%, var(--bg) 100%);
+  }
+  .hero-content{position:absolute;z-index:2;left:clamp(1.5rem,4vw,3.5rem);bottom:clamp(2rem,7vw,5.5rem);max-width:min(30rem,34vw)}
+  .eyebrow{font-family:var(--display);font-size:.78rem;letter-spacing:.32em;text-transform:uppercase;color:var(--red-hi);margin:0 0 .6rem}
+  .tagline{font-family:var(--display);font-weight:500;font-size:clamp(1.25rem,2.1vw,1.85rem);line-height:1.25;margin:0 0 1.4rem;color:#f1e6e3;text-shadow:0 2px 14px #000}
+
+  /* ---------- Buttons ---------- */
+  .btn{display:inline-flex;align-items:center;gap:.65rem;padding:.85rem 1.6rem;border-radius:3px;
+    font-family:var(--display);font-weight:700;font-size:.85rem;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;
+    color:#fff;background:linear-gradient(180deg,var(--red-hi),var(--red) 55%,var(--red-deep));border:1px solid #ff5a60;
+    box-shadow:0 0 12px rgba(224,55,62,.45),0 0 32px rgba(192,38,45,.25),inset 0 1px 0 rgba(255,255,255,.18);
+    transition:box-shadow .25s,transform .25s}
+  .btn:hover,.btn:focus-visible{color:#fff;transform:translateY(-1px);box-shadow:0 0 18px rgba(255,70,78,.7),0 0 48px rgba(224,55,62,.4),inset 0 1px 0 rgba(255,255,255,.25)}
+  .btn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+  .btn svg{width:1.3em;height:1.3em;flex:none}
+
+  /* ---------- Sections ---------- */
+  main{max-width:60rem;margin:0 auto;padding:0 1.5rem}
+  section{padding:4rem 0;border-top:1px solid var(--line)}
+  section:first-child{border-top:0}
+  h2{font-family:var(--display);font-weight:700;font-size:clamp(1.5rem,3vw,2.1rem);letter-spacing:.08em;margin:0 0 1.2rem;color:#f3e9e6}
+  h2::after{content:"";display:block;width:3.5rem;height:2px;margin-top:.7rem;background:var(--red);box-shadow:0 0 10px var(--red-hi)}
+  p{margin:0 0 1rem;color:#d6c8c4}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:2rem 0 0;padding:0;list-style:none}
+  .pillars li{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-top:2px solid var(--red-deep);padding:1.2rem 1.3rem;border-radius:3px}
+  .pillars b{display:block;font-family:var(--display);font-size:.95rem;letter-spacing:.12em;text-transform:uppercase;color:var(--red-hi);margin-bottom:.3rem}
+  .pillars span{color:var(--muted);font-size:1.05rem}
+
+  .resource{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--red);padding:1.3rem 1.5rem;border-radius:3px;text-decoration:none;color:var(--text);transition:border-color .2s,box-shadow .2s}
+  .resource:hover{color:var(--text);border-color:#4a2427;box-shadow:0 0 22px rgba(192,38,45,.18)}
+  .resource strong{font-family:var(--display);letter-spacing:.06em;font-size:1.1rem;display:block}
+  .resource small{color:var(--muted);font-size:1rem}
+  .resource .arrow{font-family:var(--display);color:var(--red-hi);font-size:1.4rem;flex:none}
+
+  /* ---------- Footer ---------- */
+  footer{margin-top:2rem;border-top:1px solid var(--line);background:radial-gradient(ellipse 60% 120% at 50% 100%,rgba(122,17,22,.35),transparent 70%),#060405;text-align:center;padding:3.5rem 1.5rem 2rem}
+  footer .name{font-family:var(--display);font-size:1.5rem;letter-spacing:.1em;color:#f3e9e6;margin:0 0 .3rem}
+  footer .sub{color:var(--muted);margin:0 0 1.6rem}
+  footer .fine{margin:2.5rem 0 0;font-size:.85rem;color:#6f625e}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:760px){
+    .nav{position:static;justify-content:center;background:#000;padding:.8rem 1rem;gap:1.2rem;font-size:.7rem}
+    .hero::after{background:linear-gradient(to bottom, transparent 75%, var(--bg) 100%)}
+    .hero-content{position:relative;max-width:none;left:auto;bottom:auto;padding:1.6rem 1.5rem 0.5rem;text-align:center}
+    .tagline{font-size:1.35rem}
+    .eyebrow{letter-spacing:.2em;font-size:.72rem}
+    .pillars{grid-template-columns:1fr}
+    section{padding:3rem 0}
+    .resource{flex-direction:row}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="hero" id="top">
+  <nav class="nav" aria-label="Main">
+    <a href="#about">About</a>
+    <a href="#resources">Resources</a>
+    <a href="https://discord.gg/tnCSB3jhyu" target="_blank" rel="noopener">Discord</a>
+  </nav>
+  <picture>
+    <source type="image/webp" srcset="assets/hero-768.webp 768w, assets/hero.webp 1344w" sizes="100vw">
+    <img src="assets/hero.jpg" srcset="assets/hero-768.jpg 768w, assets/hero.jpg 1344w" sizes="100vw" width="1344" height="768"
+         alt="Dark Knight Disciples: a robed warrior in a straw hat holding a red lightsaber beneath a blood-red moon, with a pagoda in the distance">
+  </picture>
+  <div class="hero-content">
+    <h1 class="eyebrow">Dark Knight Disciples · SWG Uprising</h1>
+    <p class="tagline">A Star Wars Galaxies guild. Walk the path with us.</p>
+    <a class="btn" href="https://discord.gg/tnCSB3jhyu" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18.2 18.2 0 0 0-5.6 0L8.6 3a19.5 19.5 0 0 0-4.9 1.5C.6 9.1-.3 13.6.1 18.1A19.7 19.7 0 0 0 6.1 21l1.3-2.1a12.7 12.7 0 0 1-2-1l.5-.4a14 14 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.6 19.6 0 0 0 6-3c.5-5.2-.9-9.7-3.6-13.6ZM8 15.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.5 8 10.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>
+      Join our Discord
+    </a>
+  </div>
+</header>
+
+<main>
+  <section id="about">
+    <h2>About the Guild</h2>
+    <!-- EDITABLE: About copy below is placeholder text. Replace with your guild's own description. -->
+    <p>Dark Knight Disciples (DKD) is a guild of disciples making our mark on the SWG Uprising server. Whether you craft, fight, or roam the galaxy in search of the perfect resource spawn, there's a place for you in our ranks.</p>
+    <p>Come say hello on Discord to learn more about the guild and how to join.</p>
+    <ul class="pillars">
+      <li><b>Crafting</b><span>Gear, ships, and goods built by guildmates.</span></li>
+      <li><b>PvP</b><span>Stand together when the fighting starts.</span></li>
+      <li><b>Resources</b><span>Hunt and share the best spawns.</span></li>
+    </ul>
+    <!-- /EDITABLE -->
+  </section>
+
+  <section id="resources">
+    <h2>Resources</h2>
+    <a class="resource" href="https://galaxyharvester.net/ghHome.py" target="_blank" rel="noopener">
+      <span>
+        <strong>Galaxy Harvester</strong>
+        <small>Resource tracking for SWG Uprising: current spawns, stats, and schematics.</small>
+      </span>
+      <span class="arrow" aria-hidden="true">&rarr;</span>
+    </a>
+  </section>
+</main>
+
+<footer>
+  <p class="name">Dark Knight Disciples</p>
+  <p class="sub">Star Wars Galaxies · SWG Uprising</p>
+  <a class="btn" href="https://discord.gg/tnCSB3jhyu" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18.2 18.2 0 0 0-5.6 0L8.6 3a19.5 19.5 0 0 0-4.9 1.5C.6 9.1-.3 13.6.1 18.1A19.7 19.7 0 0 0 6.1 21l1.3-2.1a12.7 12.7 0 0 1-2-1l.5-.4a14 14 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.6 19.6 0 0 0 6-3c.5-5.2-.9-9.7-3.6-13.6ZM8 15.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.5 8 10.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>
+    Join our Discord
+  </a>
+  <p class="fine">Fan-made guild site. Star Wars Galaxies is a trademark of its respective owners; not affiliated with Lucasfilm, Disney, or the SWG Uprising team.</p>
+</footer>
+
+</body>
+</html>
