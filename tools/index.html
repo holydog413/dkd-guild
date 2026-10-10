@@ -59,13 +59,13 @@ td.st{color:#d6c8c4}td.hi{color:#7fd88a}.stk td.n{font-size:12px}
 <div id="gate"><div class="panel" style="width:min(400px,100%)"><h1><span style="color:var(--red-hi)">DKD</span> · Tools</h1><div class="sub" style="margin-bottom:12px">Member inventory sheets</div>
  <div class="gtabs"><button class="ghost on" type="button" id="tLogin">Log in</button><button class="ghost" type="button" id="tReg">Register</button></div>
  <form id="loginForm" autocomplete="on">
-  <label for="lUser">Username</label><input id="lUser" autocomplete="username" autofocus>
+  <label for="lUser">Discord username</label><input id="lUser" autocomplete="username" autofocus>
   <label for="lPw">Password</label><input id="lPw" type="password" autocomplete="current-password">
   <div class="c" style="margin-top:12px"><button type="submit" id="lBtn">Enter</button></div><div class="err c" id="lErr"></div></form>
  <form id="regForm" autocomplete="off" style="display:none">
   <label for="rGuild">Guild password</label><input id="rGuild" type="password" autocomplete="off">
-  <label for="rUser">Username</label><input id="rUser" autocomplete="username" maxlength="32">
-  <label for="rToon">Crafting toon (in-game first name whose chat the Uprising Bot relays)</label><input id="rToon" maxlength="24" placeholder="e.g. rover">
+  <label for="rUser">Discord username</label><input id="rUser" autocomplete="username" maxlength="32">
+  <p class="muted" style="margin:4px 0">First pair your crafting toon in game by typing <code>inv pair &lt;your Discord username&gt;</code> in the chat the Uprising Bot relays (it shows as <code>yourtoon: inv pair you</code>). Pair as many toons as you like; they all feed one sheet. To move a toon to another Discord user, type <code>inv unpair</code> from it first.</p>
   <label for="rPw">Your password (min 8 chars)</label><input id="rPw" type="password" autocomplete="new-password">
   <label for="rPw2">Confirm password</label><input id="rPw2" type="password" autocomplete="new-password">
   <div class="c" style="margin-top:12px"><button type="submit" id="rBtn">Register</button></div><div class="err c" id="rErr"></div><div class="ok c" id="rOk"></div>
@@ -86,7 +86,7 @@ td.st{color:#d6c8c4}td.hi{color:#7fd88a}.stk td.n{font-size:12px}
  <details style="margin-top:10px" id="tokBox"><summary class="muted" style="cursor:pointer">Personal GitHub token (optional, <span id="tokState">not set</span>)</summary>
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;max-width:640px"><input id="ghTok" type="password" placeholder="github_pat_…" autocomplete="off" style="flex:1 1 260px"><button class="ghost" id="tokSave" type="button">Save token</button><button class="ghost" id="tokForget" type="button">Forget token</button></div>
   <p class="muted">Only needed if the guild save key isn't set up. Fine-grained token with Contents: Read and write on holydog413/dkd-guild only, stored in this browser (localStorage).</p></details>
- <p class="muted">This sheet is yours alone. Edit qty, avg CPU, qty sold or avg sold, or ✕ to delete, then Save: the page re-reads your latest sheet, applies your changes, re-encrypts it and commits it. It is also updated from your crafting toon's in-game chat commands (<code>inv +200k name @5</code>, <code>inv -10k name</code>, <code>inv sold 50k name @8</code>, <code>inv set name qty=…</code>, <code>inv del name</code>) relayed to Discord by the Uprising Bot.</p>
+ <p class="muted">This sheet is yours alone. Edit qty, avg CPU, qty sold or avg sold, or ✕ to delete, then Save: the page re-reads your latest sheet, applies your changes, re-encrypts it and commits it. It is also updated from your crafting toon's in-game chat commands (<code>inv +200k name @5</code>, <code>inv -10k name</code>, <code>inv sold 50k name @8</code>, <code>inv set name qty=…</code>, <code>inv del name</code>) relayed to Discord by the Uprising Bot, from every toon paired to your Discord username (<code>inv pair &lt;Discord username&gt;</code> / <code>inv unpair</code>).</p>
  <p class="muted">Resource stats (OQ, CD, …) come from Galaxy Harvester's current Uprising spawns (resources.json), matched by resource name. Items not in the current spawn list show “—”. Stats ≥ 900 are highlighted.</p>
 </section></main>
 <footer>Stats: <a href="https://galaxyharvester.net/" target="_blank" rel="noopener">Galaxy Harvester</a> (galaxy 161, SWG Uprising). · <a href="/">darkknightdisciples.com</a></footer>
@@ -107,9 +107,9 @@ async function kek(pw,salt,iter){const base=await crypto.subtle.importKey("raw",
 const aesKey=raw=>crypto.subtle.importKey("raw",raw,"AES-GCM",false,["encrypt","decrypt"]);
 async function decV1(e,pw){const k=await kek(pw,ub64(e.salt),e.iter);return JSON.parse(TD.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(e.iv)},k,ub64(e.ct))))}
 async function openPw(m,pw){const w=m.wrap_pw,k=await kek(pw,ub64(w.salt),w.iter);
- const dk=new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(w.iv),additionalData:TE.encode("dkd-wrap:"+m.toon)},k,ub64(w.ct)));return {dk,inv:await openDk(m,dk)}}
-async function openDk(m,dk){return JSON.parse(TD.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(m.iv),additionalData:TE.encode("dkd-inv:"+m.toon)},await aesKey(dk),ub64(m.ct))))}
-async function seal(m,dk,inv){const iv=rnd(12);const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv,additionalData:TE.encode("dkd-inv:"+m.toon)},await aesKey(dk),TE.encode(JSON.stringify(inv)));return Object.assign({},m,{iv:b64e(iv),ct:b64e(ct)})}
+ const dk=new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(w.iv),additionalData:TE.encode("dkd-wrap:"+m.acct)},k,ub64(w.ct)));return {dk,inv:await openDk(m,dk)}}
+async function openDk(m,dk){return JSON.parse(TD.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(m.iv),additionalData:TE.encode("dkd-inv:"+m.acct)},await aesKey(dk),ub64(m.ct))))}
+async function seal(m,dk,inv){const iv=rnd(12);const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv,additionalData:TE.encode("dkd-inv:"+m.acct)},await aesKey(dk),TE.encode(JSON.stringify(inv)));return Object.assign({},m,{iv:b64e(iv),ct:b64e(ct)})}
 async function wrapPw(toon,dk,pw){const salt=rnd(16),iv=rnd(12),k=await kek(pw,salt,ITER);return {kdf:"PBKDF2-SHA256",iter:ITER,salt:b64e(salt),iv:b64e(iv),ct:b64e(await crypto.subtle.encrypt({name:"AES-GCM",iv,additionalData:TE.encode("dkd-wrap:"+toon)},k,dk))}}
 /* ---- repo access ---- */
 const REPO_API="https://api.github.com/repos/holydog413/dkd-guild/contents/tools/inv/",TOKKEY="dkd-gh-token",GTOKKEY="dkd-guild-tok",SESS="dkd-member";
@@ -124,32 +124,31 @@ let ME=null,INVJ=null,DK=null;
 $("tLogin").onclick=()=>{$("loginForm").style.display="";$("regForm").style.display="none";$("tLogin").classList.add("on");$("tReg").classList.remove("on")};
 $("tReg").onclick=()=>{$("loginForm").style.display="none";$("regForm").style.display="";$("tReg").classList.add("on");$("tLogin").classList.remove("on")};
 async function login(user,pw,quiet){$("lErr").textContent="";$("lBtn").disabled=true;$("lBtn").textContent="Checking…";
- try{const reg=await readFile("registry.json"),e=Object.entries((reg&&reg.members)||{}).find(([t,v])=>v.username.toLowerCase()===user.trim().toLowerCase());
-  if(!e)throw new Error("bad");const m=await readFile(e[1].file);if(!m)throw new Error("Sheet not found yet (it can take a minute after registering)");
-  const o=await openPw(m,pw);ME={toon:e[0],username:e[1].username,file:e[1].file,pw};DK=o.dk;INVJ=o.inv;sessionStorage.setItem(SESS,JSON.stringify({user,pw}));
-  $("whoTitle").textContent=ME.username+"’s";$("whoSub").textContent="Crafting toon: "+ME.toon+" · in-game stock with Galaxy Harvester stats";document.body.classList.remove("gated");renderSync();return true}
+ try{const reg=await readFile("registry.json"),k=user.trim().toLowerCase(),a=reg&&reg.accounts&&reg.accounts[k];
+  if(!a)throw new Error("bad");const e=[k,a],toons=Object.entries(reg.toons||{}).filter(([t,v])=>v.discord.toLowerCase()===k).map(([t])=>t);const m=await readFile(a.file);if(!m)throw new Error("Sheet not found yet (it can take a minute after registering)");
+  const o=await openPw(m,pw);ME={acct:e[0],toons,username:e[1].username,file:e[1].file,pw};DK=o.dk;INVJ=o.inv;sessionStorage.setItem(SESS,JSON.stringify({user,pw}));
+  $("whoTitle").textContent=ME.username+"’s";$("whoSub").textContent=(ME.toons.length?"Paired toons: "+ME.toons.join(", "):"No toons paired (type inv pair "+ME.username+" in game)")+" · in-game stock with Galaxy Harvester stats";document.body.classList.remove("gated");renderSync();return true}
  catch(err){sessionStorage.removeItem(SESS);if(!quiet)$("lErr").textContent=(err.name==="OperationError"||err.message==="bad")?"Unknown username or wrong password":"Could not load: "+err.message;return false}
  finally{$("lBtn").disabled=false;$("lBtn").textContent="Enter"}}
 $("loginForm").onsubmit=e=>{e.preventDefault();login($("lUser").value,$("lPw").value)};
 $("logout").onclick=()=>{sessionStorage.removeItem(SESS);sessionStorage.removeItem(GTOKKEY);location.reload()};
 {const s=sessionStorage.getItem(SESS);if(s){const j=JSON.parse(s);login(j.user,j.pw,true)}}
 function dl(name,obj){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,1)],{type:"application/json"}));a.download=name;a.click()}
-$("regForm").onsubmit=async e=>{e.preventDefault();$("rErr").textContent=$("rOk").textContent="";const user=$("rUser").value.trim(),toon=$("rToon").value.trim().toLowerCase(),pw=$("rPw").value;
- if(!/^[A-Za-z0-9_.-]{2,32}$/.test(user))return $("rErr").textContent="Username: 2–32 letters, digits, _ . -";
- if(!/^[a-z0-9]{2,24}$/.test(toon))return $("rErr").textContent="Toon: the in-game first name, letters/digits only";
+$("regForm").onsubmit=async e=>{e.preventDefault();$("rErr").textContent=$("rOk").textContent="";const user=$("rUser").value.trim().replace(/^@/,""),acct=user.toLowerCase(),pw=$("rPw").value;
+ if(!/^[A-Za-z0-9_.]{2,32}$/.test(user))return $("rErr").textContent="Discord username: 2–32 letters, digits, _ or .";
  if(pw.length<8)return $("rErr").textContent="Password must be at least 8 characters";if(pw!==$("rPw2").value)return $("rErr").textContent="Passwords don't match";
  $("rBtn").disabled=true;$("rBtn").textContent="Working…";
  try{try{await unlockGuild($("rGuild").value)}catch(_){throw new Error("Wrong guild password")}
-  const reg=(await readFile("registry.json"))||{members:{}};if(reg.members[toon])throw new Error("That toon is already registered");
-  if(Object.values(reg.members).some(v=>v.username.toLowerCase()===user.toLowerCase()))throw new Error("That username is taken");
+  const reg=(await readFile("registry.json"))||{accounts:{},toons:{}};if((reg.accounts||{})[acct])throw new Error("That Discord username is already registered");
+  if(!Object.values(reg.toons||{}).some(v=>v.discord.toLowerCase()===acct))throw new Error(`No toon is paired to ${user} yet. In game type: inv pair ${user} — then wait for the next sync and try again.`);
   const pub=await readFile("server-pub.json"),pk=await crypto.subtle.importKey("spki",ub64(pub.spki),{name:"RSA-OAEP",hash:"SHA-256"},false,["encrypt"]);
-  const dk=rnd(32),m0={v:2,toon,username:user,alg:"AES-256-GCM",wrap_pw:await wrapPw(toon,dk,pw),wrap_srv:{alg:"RSA-OAEP-256",ct:b64e(await crypto.subtle.encrypt({name:"RSA-OAEP"},pk,dk))}};
+  const dk=rnd(32),m0={v:2,acct,username:user,alg:"AES-256-GCM",wrap_pw:await wrapPw(acct,dk,pw),wrap_srv:{alg:"RSA-OAEP-256",ct:b64e(await crypto.subtle.encrypt({name:"RSA-OAEP"},pk,dk))}};
   const m=await seal(m0,dk,{updated:null,items:[],log:[]});
-  if(!tok()){dl(`dkd-register-${toon}.json`,m);$("rOk").textContent="The guild save key isn't set up yet, so your registration was downloaded as a file. Send it to an officer to add. It holds only encrypted data, no password.";return}
-  const r1=await ghPut(toon+".enc.json",m,null,"Register inventory sheet for "+toon);if(!r1.ok)throw new Error(r1.status===422?"That toon already has a sheet":"Save failed: HTTP "+r1.status);
-  let ok=false;for(let a=0;a<5&&!ok;a++){const {sha,json}=await ghGet("registry.json"),R=json||{v:1,members:{}};
-   if(R.members[toon]){ok=true;break}R.members[toon]={username:user,file:toon+".enc.json",created:new Date().toISOString().replace(/\.\d+Z$/,"Z")};
-   R.members=Object.fromEntries(Object.entries(R.members).sort());const r=await ghPut("registry.json",R,sha,"Register "+toon);if(r.ok){ok=true;break}if(r.status!==409&&r.status!==422)throw new Error("Registry save failed: HTTP "+r.status)}if(!ok)throw new Error("Registry kept changing; try again")
+  if(!tok()){dl(`dkd-register-${acct}.json`,m);$("rOk").textContent="The guild save key isn't set up yet, so your registration was downloaded as a file. Send it to an officer to add. It holds only encrypted data, no password.";return}
+  const r1=await ghPut(acct+".enc.json",m,null,"Register inventory sheet for "+acct);if(!r1.ok)throw new Error(r1.status===422?"That account already has a sheet":"Save failed: HTTP "+r1.status);
+  let ok=false;for(let a=0;a<5&&!ok;a++){const {sha,json}=await ghGet("registry.json"),R=json||{v:2,accounts:{},toons:{}};R.accounts=R.accounts||{};
+   if(R.accounts[acct]){ok=true;break}R.accounts[acct]={username:user,file:acct+".enc.json",created:new Date().toISOString().replace(/\.\d+Z$/,"Z")};
+   R.accounts=Object.fromEntries(Object.entries(R.accounts).sort());const r=await ghPut("registry.json",R,sha,"Register "+acct);if(r.ok){ok=true;break}if(r.status!==409&&r.status!==422)throw new Error("Registry save failed: HTTP "+r.status)}if(!ok)throw new Error("Registry kept changing; try again")
   $("rOk").textContent="Registered ✓. You can log in in about a minute (once the site redeploys).";$("lUser").value=user}
  catch(err){$("rErr").textContent=err.message||String(err)}finally{$("rBtn").disabled=false;$("rBtn").textContent="Register"}};
 /* ---- editing ---- */
@@ -172,7 +171,7 @@ async function saveSync(){if(needToken())return;$("syncSave").disabled=true;$("s
 $("cpForm").onsubmit=async e=>{e.preventDefault();const o=$("cpOld").value,n=$("cpNew").value;$("cpMsg").textContent="";
  if(n.length<8)return $("cpMsg").textContent="New password must be at least 8 characters";if(n!==$("cpNew2").value)return $("cpMsg").textContent="New passwords don't match";if(needToken())return $("cpMsg").textContent="Unlock saving first (guild password above).";
  $("cpBtn").disabled=true;try{for(let a=0;a<4;a++){const {sha,json:m}=await ghGet(ME.file);let dk;try{dk=(await openPw(m,o)).dk}catch(_){throw new Error("Current password is wrong")}
-   const r=await ghPut(ME.file,Object.assign({},m,{wrap_pw:await wrapPw(m.toon,dk,n)}),sha,"Change password for "+ME.file);
+   const r=await ghPut(ME.file,Object.assign({},m,{wrap_pw:await wrapPw(m.acct,dk,n)}),sha,"Change password for "+ME.file);
    if(r.ok){ME.pw=n;sessionStorage.setItem(SESS,JSON.stringify({user:ME.username,pw:n}));e.target.reset();$("cpMsg").textContent="Password changed ✓";return}
    if(r.status!==409&&r.status!==422)throw new Error("Save failed: HTTP "+r.status)}throw new Error("file kept changing; try again")}
  catch(err){$("cpMsg").textContent=err.message}finally{$("cpBtn").disabled=false}};
@@ -194,6 +193,6 @@ function renderSync(){if(!INVJ)return;let tc=0,tp=0;const fq=$("fq").value.toLow
 const csvq=v=>{v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
 $("expCsv").onclick=()=>{if(!INVJ)return;const rows=[["Item","Resource type","Qty on hand","Avg CPU","Total cost",...STATS,"Qty sold","Avg sold","Realized profit","Updated"].join(",")].concat((INVJ.items||[]).map(it0=>{const it=view(it0),r=resOf(it),q=it.qty||0,c=it.cpu;
   return [it.item,(r&&r.type)||it.resType||"",q,c??"",c==null?"":(c*q).toFixed(2),...STATS.map(s=>r&&r.stats&&r.stats[s]!=null?r.stats[s]:""),it.qsold||0,it.qsold?(it.revenue/it.qsold).toFixed(2):"",it.qsold?(it.revenue-it.costSold).toFixed(2):"",it.updated||""].map(csvq).join(",")}));
- const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rows.join("\n")],{type:"text/csv"}));a.download=`dkd-inventory-${ME?ME.toon+'-':''}${new Date().toISOString().slice(0,10)}.csv`;a.click()};
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([rows.join("\n")],{type:"text/csv"}));a.download=`dkd-inventory-${ME?ME.acct+'-':''}${new Date().toISOString().slice(0,10)}.csv`;a.click()};
 
 </script></body></html>
