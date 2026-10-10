@@ -252,7 +252,7 @@ $("gateForm").onsubmit=e=>{e.preventDefault();unlockGate($("gatePw").value)};
 $("logout").onclick=()=>{sessionStorage.removeItem(PWKEY);sessionStorage.removeItem(UKEY);location.reload()};
 if(sessionStorage.getItem(PWKEY))unlockGate(sessionStorage.getItem(PWKEY),true);
 function renderSync(){if(!INVJ)return;let tc=0,tv=0,tp=0;const I=INVJ.items||[];
- $("syncMeta").textContent=I.length?`${I.length} item(s) · inventory.json updated ${INVJ.updated?new Date(INVJ.updated).toLocaleString():"?"}`:"No game-tracked items yet.";
+ $("syncMeta").textContent=I.length?`${I.length} item(s) · inventory updated ${INVJ.updated?new Date(INVJ.updated).toLocaleString():"?"}`:"No game-tracked items yet.";
  $("syncBody").innerHTML=I.map(it=>{const cv=calcVal(it),c=it.cpu,q=it.qty||0,tot=c==null?null:c*q,rp=it.qsold?it.revenue-it.costSold:null,as=it.qsold?it.revenue/it.qsold:null;
   if(tot!=null)tc+=tot;if(cv!=null)tv+=cv*q;if(rp!=null)tp+=rp;
   return `<tr><td>${esc(it.item)}${it.resType?`<div class="muted">${esc(it.resType)}</div>`:""}</td><td>${it.type==="resource"?"Resource":it.type==="crafted"?"Crafted item":"Other"}</td><td class="n">${fmt(q)}</td><td class="n">${f2(c)}</td><td class="n">${f2(tot)}</td><td class="n price">${f2(cv)}</td><td class="n">${cv==null?"—":fmt(cv*q)}</td><td class="n">${fmt(it.qsold||0)}</td><td class="n">${f2(as)}</td><td class="n ${rp==null?"":rp>=0?"pos":"neg"}">${f2(rp)}</td><td class="muted">${it.updated?esc(new Date(it.updated).toLocaleString()):""}</td></tr>`}).join("");
