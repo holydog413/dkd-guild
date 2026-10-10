@@ -107,8 +107,12 @@ footer{text-align:center;color:#6f625e;padding:20px;font-size:12px}
  <div class="tablewrap"><table class="stk"><thead><tr><th>Item</th><th>Type</th><th>Qty on hand</th><th>Purchase CPU</th><th>Total cost</th><th>Calc value/u</th><th>Sold CPU</th><th>Qty sold</th><th>Profit/u</th><th>Total profit</th><th>Notes</th><th></th></tr></thead><tbody id="stockBody"></tbody><tfoot id="stockFoot"></tfoot></table></div>
  <h2 style="margin-top:22px">Synced from game</h2>
  <div class="muted" id="syncMeta" style="margin-bottom:6px">Loading inventory.json…</div>
- <div class="tablewrap"><table class="stk"><thead><tr><th>Item</th><th>Type</th><th>On hand</th><th>Avg CPU</th><th>Total cost</th><th>Calc value/u</th><th>Value at calc</th><th>Qty sold</th><th>Avg sold</th><th>Realized profit</th><th>Updated</th></tr></thead><tbody id="syncBody"></tbody><tfoot id="syncFoot"></tfoot></table></div>
- <p class="muted">Read-only. Updated from in-game chat commands (<code>inv +200k name @5</code>, <code>inv -10k name</code>, <code>inv sold 50k name @8</code>) relayed to Discord. Stored encrypted (inventory.enc.json) and decrypted in your browser.</p>
+ <div class="tablewrap"><table class="stk"><thead><tr><th>Item</th><th>Type</th><th>On hand</th><th>Avg CPU</th><th>Total cost</th><th>Calc value/u</th><th>Value at calc</th><th>Qty sold</th><th>Avg sold</th><th>Realized profit</th><th>Updated</th><th></th></tr></thead><tbody id="syncBody"></tbody><tfoot id="syncFoot"></tfoot></table></div>
+ <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><button id="syncSave" disabled>Save changes</button><button class="ghost" id="syncDiscard" disabled>Discard</button><span class="muted" id="syncStatus"></span></div>
+ <details style="margin-top:10px" id="tokBox"><summary class="muted" style="cursor:pointer">GitHub token for saving (<span id="tokState">not set</span>)</summary>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;max-width:640px"><input id="ghTok" type="password" placeholder="github_pat_…" autocomplete="off" style="flex:1 1 260px"><button class="ghost" id="tokSave" type="button">Save token</button><button class="ghost" id="tokForget" type="button">Forget token</button></div>
+  <p class="muted">Fine-grained token with Contents: Read and write on holydog413/dkd-guild only. Stored only in this browser (localStorage); Log out does not remove it, use Forget token.</p></details>
+ <p class="muted">Edit qty, avg CPU, qty sold or avg sold, or ✕ to delete, then Save: the page re-reads the latest inventory from GitHub, applies your changes, re-encrypts and commits it. Also updated from in-game chat commands (<code>inv +200k name @5</code>, <code>inv -10k name</code>, <code>inv sold 50k name @8</code>) relayed to Discord. Stored encrypted (inventory.enc.json) and decrypted in your browser.</p>
  <p class="muted">Calc value/u comes from your pricing settings: a resource uses the current spawn's price, and a crafted item uses its schematic's suggested sell price per item (best spawns, components and markup from the Schematics tab). Profit/u = sold CPU − purchase CPU; total profit = profit/u × qty sold. Saved in this browser; use Export CSV for backups.</p>
 </div>
 </section>
@@ -240,7 +244,7 @@ const _rd=renderDetail;renderDetail=function(){_rd();renderStock()};const _os2=o
 
 // ---------- Synced inventory (inventory.json) ----------
 let INVJ=null;const PWKEY="dkd-tools-pw",ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-async function decryptInv(pw){const e=await (await fetch("inventory.enc.json?t="+Date.now(),{cache:"no-store"})).json();
+async function decryptInv(pw){let e=null;if(localStorage.getItem("dkd-gh-token")){try{e=(await ghGet()).enc}catch(_){}}if(!e)e=await (await fetch("inventory.enc.json?t="+Date.now(),{cache:"no-store"})).json();
  const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);
  const key=await crypto.subtle.deriveKey({name:"PBKDF2",hash:"SHA-256",salt:ub64(e.salt),iterations:e.iter},base,{name:"AES-GCM",length:256},false,["decrypt"]);
  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(e.iv)},key,ub64(e.ct))))}
@@ -251,7 +255,41 @@ async function unlockGate(pw,quiet){$("gateErr").textContent="";$("gateBtn").dis
 $("gateForm").onsubmit=e=>{e.preventDefault();unlockGate($("gatePw").value)};
 $("logout").onclick=()=>{sessionStorage.removeItem(PWKEY);sessionStorage.removeItem(UKEY);location.reload()};
 if(sessionStorage.getItem(PWKEY))unlockGate(sessionStorage.getItem(PWKEY),true);
-function renderSync(){if(!INVJ)return;let tc=0,tv=0,tp=0;const I=INVJ.items||[];
+const GH_API="https://api.github.com/repos/holydog413/dkd-guild/contents/tools/inventory.enc.json",TOKKEY="dkd-gh-token";let EDITS={},DELS=new Set();
+const tok=()=>localStorage.getItem(TOKKEY)||"",b64e=u=>{let s="";u.forEach(c=>s+=String.fromCharCode(c));return btoa(s)},utf8b64=t=>b64e(new TextEncoder().encode(t)),b64utf8=b=>new TextDecoder().decode(ub64(b.replace(/\s/g,"")));
+async function kdf(pw,salt,iter){const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",hash:"SHA-256",salt,iterations:iter},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function decEnc(e,pw){const k=await kdf(pw,ub64(e.salt),e.iter);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:ub64(e.iv)},k,ub64(e.ct))))}
+async function encInv(obj,pw){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),k=await kdf(pw,salt,310000);
+ const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},k,new TextEncoder().encode(JSON.stringify(obj))));return {v:1,alg:"AES-256-GCM",kdf:"PBKDF2-SHA256",iter:310000,salt:b64e(salt),iv:b64e(iv),ct:b64e(ct)}}
+async function ghGet(){const r=await fetch(GH_API+"?ref=main&t="+Date.now(),{headers:{Authorization:"Bearer "+tok(),Accept:"application/vnd.github+json"},cache:"no-store"});if(!r.ok)throw new Error("GitHub read failed: HTTP "+r.status);const j=await r.json();return {sha:j.sha,enc:JSON.parse(b64utf8(j.content))}}
+function setFields(it,f){const basis=it.qsold?it.costSold/it.qsold:(it.cpu||0);let avg=it.qsold?it.revenue/it.qsold:0;
+ if(f.qty!=null)it.qty=Math.max(0,Math.round(f.qty));if(f.cpu!==undefined)it.cpu=f.cpu;if(f.qsold!=null)it.qsold=Math.max(0,Math.round(f.qsold));if(f.avgsold!=null)avg=f.avgsold;
+ const b=!it.costSold&&f.cpu!=null?f.cpu:basis;it.revenue=(it.qsold||0)*avg;it.costSold=(it.qsold||0)*b}
+async function saveSync(){const pw=sessionStorage.getItem(PWKEY);if(!tok()){$("syncStatus").textContent="Add a GitHub token below first.";$("tokBox").open=true;return}
+ $("syncSave").disabled=true;$("syncStatus").textContent="Saving…";
+ try{for(let a=0;a<4;a++){const {sha,enc}=await ghGet(),inv=await decEnc(enc,pw),now=new Date().toISOString().replace(/\.\d+Z$/,"Z");inv.log=inv.log||[];
+   for(const k of DELS){const n=inv.items.length;inv.items=inv.items.filter(i=>i.item.toLowerCase()!==k);if(inv.items.length<n)inv.log.push({id:"web-"+Date.now(),ts:now,cmd:"web: del",item:k,op:"del"})}
+   for(const [k,f] of Object.entries(EDITS)){if(DELS.has(k))continue;const it=inv.items.find(i=>i.item.toLowerCase()===k);if(!it)continue;setFields(it,f);it.updated=now;inv.log.push({id:"web-"+Date.now(),ts:now,cmd:"web: set "+JSON.stringify(f),item:it.item,op:"set"})}
+   inv.log=inv.log.slice(-500);inv.updated=now;const body=JSON.stringify({message:"Update tools/inventory.enc.json from web editor",content:utf8b64(JSON.stringify(await encInv(inv,pw))),sha,branch:"main"});
+   const r=await fetch(GH_API,{method:"PUT",headers:{Authorization:"Bearer "+tok(),Accept:"application/vnd.github+json","Content-Type":"application/json"},body});
+   if(r.ok){INVJ=inv;EDITS={};DELS=new Set();$("syncStatus").textContent="Saved ✓ (committed to GitHub)";renderSync();return}
+   if(r.status!==409&&r.status!==422)throw new Error("GitHub save failed: HTTP "+r.status+(r.status===401||r.status===403?" (check the token)":""))}
+  throw new Error("file kept changing; try again")}
+ catch(e){$("syncStatus").textContent=String(e.message||e);$("syncSave").disabled=false}}
+function syncDirty(){const n=Object.keys(EDITS).length+DELS.size;$("syncSave").disabled=!n;$("syncDiscard").disabled=!n;if(n)$("syncStatus").textContent=`${n} unsaved change(s)`}
+$("syncSave").onclick=saveSync;$("syncDiscard").onclick=()=>{EDITS={};DELS=new Set();$("syncStatus").textContent="";renderSync()};
+$("syncBody").addEventListener("change",e=>{const t=e.target,k=t.closest("tr")&&t.closest("tr").dataset.k;if(!k||!t.dataset.sf)return;(EDITS[k]=EDITS[k]||{})[t.dataset.sf]=t.value===""?null:+t.value;syncDirty()});
+$("syncBody").addEventListener("click",e=>{const k=e.target.dataset.sdel;if(k==null)return;DELS.has(k)?DELS.delete(k):DELS.add(k);renderSync()});
+function tokUI(){$("tokState").textContent=tok()?"saved in this browser":"not set";$("ghTok").value=""}
+$("tokSave").onclick=()=>{const v=$("ghTok").value.trim();if(v){localStorage.setItem(TOKKEY,v);tokUI();$("syncStatus").textContent="Token saved."}};
+$("tokForget").onclick=()=>{localStorage.removeItem(TOKKEY);tokUI()};tokUI();
+function renderSync(){if(!INVJ)return;let tc=0,tv=0,tp=0;const I=INVJ.items||[];const view=it=>{const e=EDITS[it.item.toLowerCase()];if(!e)return it;const c=Object.assign({},it);setFields(c,e);return c};
+ $("syncMeta").textContent=I.length?`${I.length} item(s) · inventory updated ${INVJ.updated?new Date(INVJ.updated).toLocaleString():"?"}`:"No game-tracked items yet.";
+ $("syncBody").innerHTML=I.map(it0=>{const k=it0.item.toLowerCase(),it=view(it0),del=DELS.has(k),cv=calcVal(it),c=it.cpu,q=it.qty||0,tot=c==null?null:c*q,rp=it.qsold?it.revenue-it.costSold:null,as=it.qsold?it.revenue/it.qsold:null;
+  if(!del){if(tot!=null)tc+=tot;if(cv!=null)tv+=cv*q;if(rp!=null)tp+=rp}
+  return `<tr data-k="${esc(k)}" style="${del?"opacity:.45;text-decoration:line-through":""}"><td>${esc(it.item)}${it.resType?`<div class="muted">${esc(it.resType)}</div>`:""}</td><td>${it.type==="resource"?"Resource":it.type==="crafted"?"Crafted item":"Other"}</td><td><input class="w90" type="number" min="0" data-sf="qty" value="${q}"></td><td><input class="w90" type="number" min="0" step="0.01" data-sf="cpu" value="${c??""}"></td><td class="n">${f2(tot)}</td><td class="n price">${f2(cv)}</td><td class="n">${cv==null?"—":fmt(cv*q)}</td><td><input class="w90" type="number" min="0" data-sf="qsold" value="${it.qsold||0}"></td><td><input class="w90" type="number" min="0" step="0.01" data-sf="avgsold" value="${as==null?"":+as.toFixed(2)}"></td><td class="n ${rp==null?"":rp>=0?"pos":"neg"}">${f2(rp)}</td><td class="muted">${it.updated?esc(new Date(it.updated).toLocaleString()):""}</td><td><button class="ghost" data-sdel="${esc(k)}" title="${del?"Undo delete":"Delete row"}">${del?"↺":"✕"}</button></td></tr>`}).join("");
+ $("syncFoot").innerHTML=I.length?`<tr><td colspan="4">Totals</td><td class="n">${fmt(tc)}</td><td></td><td class="n price">${fmt(tv)}</td><td colspan="2">Realized profit:</td><td class="n ${tp>=0?"pos":"neg"}">${fmt(tp)}</td><td colspan="2"></td></tr>`:"";syncDirty()}
+//
  $("syncMeta").textContent=I.length?`${I.length} item(s) · inventory updated ${INVJ.updated?new Date(INVJ.updated).toLocaleString():"?"}`:"No game-tracked items yet.";
  $("syncBody").innerHTML=I.map(it=>{const cv=calcVal(it),c=it.cpu,q=it.qty||0,tot=c==null?null:c*q,rp=it.qsold?it.revenue-it.costSold:null,as=it.qsold?it.revenue/it.qsold:null;
   if(tot!=null)tc+=tot;if(cv!=null)tv+=cv*q;if(rp!=null)tp+=rp;
